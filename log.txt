@@ -1,0 +1,2 @@
+Watcher started on /home/patriarch/dev/ship_x_data/shipxdata_external/external/web/static/puer
+Watcher intialized [object Object]
