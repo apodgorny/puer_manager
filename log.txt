@@ -1,2 +1,14 @@
-Watcher started on /home/patriarch/dev/ship_x_data/shipxdata_external/external/web/static/puer
-Watcher intialized [object Object]
+Watcher started on /Users/Alexander/dev/sxd/External/external/web/static/puer/
+File /Users/Alexander/dev/sxd/External/external/web/static/puer/class.Test.puer has been added
+parsing /Users/Alexander/dev/sxd/External/external/web/static/puer/class.Test.puer
+read
+Watcher is ready
+parsing /Users/Alexander/dev/sxd/External/external/web/static/puer/class.Test.puer
+File /Users/Alexander/dev/sxd/External/external/web/static/puer/class.Test.puer has been changed
+read
+File /Users/Alexander/dev/sxd/External/external/web/static/puer/class.Test.puer has been changed
+parsing /Users/Alexander/dev/sxd/External/external/web/static/puer/class.Test.puer
+read
+File /Users/Alexander/dev/sxd/External/external/web/static/puer/class.Test.puer has been changed
+parsing /Users/Alexander/dev/sxd/External/external/web/static/puer/class.Test.puer
+read

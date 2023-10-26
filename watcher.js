@@ -1,22 +1,27 @@
+const path     = require('path')
+const chokidar = require('chokidar')
+
 const FileManager = require('./class.FileManager.js')
-const chokidar    = require('chokidar')
 
 const args    = process.argv.slice(2)
 const baseDir = args[0]
-const puerDir = baseDir + '/puer'
+const puerDir = path.join(baseDir, 'puer/')
 
 FileManager.clearLog()
 FileManager.log('Watcher started on', puerDir)
 
 const watcher = chokidar.watch(puerDir, {
-	ignored: /(^|[\/\\])\../,  // Ignore dotfiles
-	persistent: true
+	ignored    : /(^|[\/\\])\../,  // Ignore dotfiles
+	persistent : true
 })
 
+console.log('Base Dir:', baseDir)
+console.log('Puer Dir:', puerDir)
 
 watcher
-	.on('add',    FileManager.onAdd)
-	.on('change', FileManager.onChange)
-	.on('unlink', FileManager.onDelete)
+	.on('ready', ()     => { FileManager.log   ('Watcher is ready' ) })
+	.on('error',  error => { FileManager.error (`Error: ${error}`  ) })
 
-FileManager.log('Watcher intialized', watcher.options)
+	.on('add',    path  => { FileManager.onAdd    (path, baseDir) })
+	.on('change', path  => { FileManager.onChange (path, baseDir) })
+	.on('unlink', path  => { FileManager.onDelete (path, baseDir) })
