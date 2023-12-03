@@ -5,75 +5,101 @@ const path = require('path')
 class FileManager {
 	static logFile = 'log.txt'
 
-	static parsePuer(filePath, basePath) {
-		const variablePath = filePath.replace(basePath, '')
-		FileManager.log('parsing', filePath)
-		fs.readFile(filePath, 'utf8', (err, data) => {
-			FileManager.log('read')
-			if (err) {
-				FileManager.log(`Error reading file "${filePath}":`, err)
-				return
-			}
+	static getConfig(dir, result = []) {
+		let jsPath  = null
+		let cssPath = null
 
-			try {
-				const regex     = /====([\s\S]*?)----/g
-				const cssBlocks = []
-
-				let result
-
-				while ((result = regex.exec(data)) !== null) {
-					cssBlocks.push(result[1].trim());
+		fs.readdirSync(dir, { withFileTypes: true }).forEach(dirent => {
+			if (dirent.isDirectory()) {
+				const subdir = path.join(dir, dirent.name);
+				FileManager.getConfig(subdir, result);
+				if (dirent.name == 'js') {
+					jsPath = path.join(dir, 'js')
+				} else if (dirent.name == 'css') {
+					cssPath = path.join(dir, 'css')
 				}
-
-				const cssCode = cssBlocks.join('\n').trim()        || '/* No JS Code found */'
-				const jsCode  = data.replace(regex, '').trim() || '/* No CSS Code found */'
-
-				const  jsFileName = basePath + variablePath.replace(/puer/g,  'js')
-				const cssFileName = basePath + variablePath.replace(/puer/g, 'css')
-
-				fs.writeFile(jsFileName, jsCode, 'utf8', (err) => {
-					err && FileManager.log(`Error writing file "${jsFileName}":`, err)
-				})
-				fs.writeFile(cssFileName, cssCode, 'utf8', (err) => {
-					err && FileManager.log(`Error writing file "${cssFileName}":`, err)
-				})
-			} catch (err) {
-				FileManager.log(err.message)
 			}
 		})
+
+		if (jsPath && cssPath) {
+			result.push({ css: cssPath, js: jsPath })
+		}
+
+		return result
 	}
 
-	// static getPath(baseDir, filePath, ext) {
-	// 	return path.join(basePath, filePath.replace(basePath, '').replace
-
-	// static sync(baseDir) {
-	// 	const jsDir = path.join(baseDir, 'js/')
-
-	// 	fs.readdir(jsDir, (err, files) => {
-	// 		if (err) { return FileManager.log('Error sync-ing files:', err) }
-	// 		files.filter(file => file.endsWith('.js')).forEach(file => {
-	// 			const cssFile = basePath + variablePath.replace(/puer/g, 'css')
-	// 			console.log(file)
-	// 		});
-	// 	})
-	// }
-
-	static onAdd(path, basePath) {
-		FileManager.log(`File ${path} has been added`)
-		FileManager.parsePuer(path, basePath)
+	static isFileEmpty(path) {
+		return fs.statSync(path).size == 0
 	}
 
-	static onChange(path, basePath) {
-		FileManager.log(`File ${path} has been changed`)
-		FileManager.parsePuer(path, basePath)
+	static isFileValid(path) {
+		// console.log(path, !!path.match(/js\/class\.(\w+)\.js$/))
+		return !!path.match(/js\/class\.(\w+)\.js$/)
 	}
 
-	static onDelete(path, basePath) {
-		FileManager.log(`File ${path} has been removed`)
+	static getJsClassName(path) {
+		const regex = /class\.(\w+)\.js$/
+		const match = path.match(regex)
+
+		if (match) {
+			return match[1]
+		} else {
+			return null
+		}
+	}
+
+	static camelToKebab(s) {
+		return s.replace(/([a-zA-Z])(?=[A-Z])/g, '$1-').toLowerCase()
+	}
+
+	static jsToCss(className, path) {
+		return path.replace(/js\/class\.(\w+)\.js$/, `css/class.${className}.css`)
+	}
+
+	static addJsClass(className, path) {
+		let s = fs.readFileSync('templates/class.js', { encoding: 'utf8', flag: 'r' })
+		s = s.split('<className>').join(className)
+		fs.writeFileSync(path, s)
+	}
+
+	static addCssClass(className, path) {
+		const cssClass = FileManager.camelToKebab(className)
+		fs.writeFileSync(FileManager.jsToCss(className, path), `.${cssClass} {\n}`)
+	}
+
+	static removeClass(className, path) {
+		path = FileManager.jsToCss(className, path)
+		if (fs.existsSync(path)) {
+			fs.unlinkSync(path)
+		}
+	}
+
+	static onAdd(path) {
+		if (FileManager.isFileValid(path) && FileManager.isFileEmpty(path)) {
+			const className = FileManager.getJsClassName(path)
+			FileManager.log(`Added class: ${className}`)
+			FileManager.addJsClass(className, path)
+			FileManager.addCssClass(className, path)
+		}
+	}
+
+	static onChange(path) {
+		if (FileManager.isFileValid(path)) {
+			// FileManager.log(`File ${path} has been changed`)
+		}
+	}
+
+	static onDelete(path) {
+		if (FileManager.isFileValid(path)) {
+			const className = FileManager.getJsClassName(path)
+			FileManager.log(`Removed class: ${className}`)
+			FileManager.removeClass(className, path)
+		}
 	}
 
 	static log(...args) {
-		fs.appendFile(FileManager.logFile,  args.join(' ') + '\n', err => {})
+		console.log(...args)
+		// fs.appendFile(FileManager.logFile,  args.join(' ') + '\n', err => {})
 	}
 
 	static clearLog() {
